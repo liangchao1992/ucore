@@ -1,0 +1,6 @@
+target remote 192.168.0.58:2331
+file obj/kernel/kernel-empty.elf
+monitor endian littele
+monitor reset
+monitor reg sp (0x0)
+monitor reg pc (0x4)
