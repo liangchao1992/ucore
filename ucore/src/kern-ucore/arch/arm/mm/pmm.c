@@ -16,6 +16,10 @@
 #include <mp.h>
 #include <ramdisk.h>
 
+#define KERNBASE            0x1FFF8000  //SDRAM0_START
+#define KMEMSIZE            0x10000     //64k SDRAM0_SIZE       // the maximum amount of physical memory
+#define KERNTOP             (KERNBASE + KMEMSIZE)
+
 uint32_t do_set_tls(struct user_tls_desc *tlsp)
 {
 	void *tp = (void *)tlsp;

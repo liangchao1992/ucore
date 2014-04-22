@@ -42,7 +42,7 @@ __Vectors:
     .long   DebugMonitor_handler                      /* 12: Debug Monitor Handler       */
     .long   0                                    /* 13: Reserved                    */
     .long   0	                                    /* 14: PendSV Handler              */
-    .long   SysTickHandler                     /* 15: Systick handler             */
+    .long   0		                      /* 15: Systick handler             */
 
     /*    External Interrupts Vector Define                                         */
     .long   default_handler                      /* 16: */

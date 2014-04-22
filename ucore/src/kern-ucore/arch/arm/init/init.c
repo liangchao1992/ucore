@@ -117,12 +117,12 @@ int kern_init(void)
 #endif
 
 	const char *message = "(THU.CST) os is loading ...";
-	kprintf("%s\n\n", message);
+	//kprintf("%s\n\n", message);
 
 
 	mp_init();
 
-	print_kerninfo();
+//	print_kerninfo();
 
 	pmm_init();		// init physical memory management
 	pmm_init_ap();

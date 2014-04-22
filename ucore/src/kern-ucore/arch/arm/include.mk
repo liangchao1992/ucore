@@ -14,7 +14,7 @@ endif
 
 
 ifdef UCONFIG_ARM_BOARD_M3
-ARCH_INLUCDES +=m3
+ARCH_INLUCDES +=m3 m3/CMSIS
 PLATFORM_DEF += -mcpu=cortex-m3
 
 
