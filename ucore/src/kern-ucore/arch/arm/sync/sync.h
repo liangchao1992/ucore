@@ -3,11 +3,13 @@
 
 #include <arm.h>
 #include <intr.h>
-#include <mmu.h>
 
 static inline bool __intr_save(void)
 {
-	if (read_psrflags() & PSR_I) {
+	uint32_t primask;
+	asm volatile("mrs %0, primask":"=r" (primask));
+	if( primask&0x1)//interrupt has been disabled
+	{
 		return 0;
 	}
 	intr_disable();

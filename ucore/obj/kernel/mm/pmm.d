@@ -1,12 +1,11 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/mm/pmm.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/mm/pmm.d: \
  pmm.c /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/pmm.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mm/mmu.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/memlayout.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/board.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/board-goldfish.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/memlayout.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/board.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/board-goldfish.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/memlayout_common.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/atomic.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/sync/sync.h \

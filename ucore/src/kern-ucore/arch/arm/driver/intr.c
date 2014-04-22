@@ -4,11 +4,13 @@
 /* intr_enable - enable irq interrupt */
 void intr_enable(void)
 {
-	irq_flag_enable();
+	//irq_flag_enable();
+	asm volatile("cpsie i": : : "memory");
 }
 
 /* intr_disable - disable irq interrupt */
 void intr_disable(void)
 {
-	irq_flag_disable();
+	//irq_flag_disable();
+	asm volatile ("cpsid i": : : "memory");
 }

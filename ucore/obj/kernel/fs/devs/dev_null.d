@@ -1,6 +1,5 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/devs/dev_null.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/devs/dev_null.d: \
  dev_null.c /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/fs/devs/dev.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/fs/vfs/vfs.h \

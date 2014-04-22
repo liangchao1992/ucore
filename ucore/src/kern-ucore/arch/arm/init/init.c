@@ -22,8 +22,6 @@
 #include <sync.h>
 #include <ramdisk.h>
 #include <kgdb-stub.h>
-#include <module.h>
-#include <dde_kit/dde_kit.h>
 
 #ifdef UCONFIG_HAVE_YAFFS2
 #include <yaffs2_direct/yaffsfs.h>
@@ -110,12 +108,8 @@ int kern_init(void)
 	extern char edata[], end[];
 	memset(edata, 0, end - edata);
 
-	//char *p = 0xc81aa000;
-//	*p = 0;
 
 	exception_vector_init();
-//	pmm_init();		// init physical memory management
-//	pmm_init_ap();
 	board_init_early();
 
 #ifdef UCONFIG_HAVE_RAMDISK
@@ -125,10 +119,7 @@ int kern_init(void)
 	const char *message = "(THU.CST) os is loading ...";
 	kprintf("%s\n\n", message);
 
-	//kgdb_init();
-	//check_bp();
 
-	/* Only to initialize lcpu_count. */
 	mp_init();
 
 	print_kerninfo();
@@ -198,4 +189,26 @@ int kern_init(void)
 	enable_timer_list();
 	print_pgdir(kprintf);
 	cpu_idle();		// run idle process
+}
+void NMI_handler(){
+	kprintf("NMI\n");
+	}
+void HardFault_handler(){
+	kprintf("HardFault\n");
+}
+void MPUFault_handler(){
+	kprintf("MPU\n");
+}
+void BusFault_handler(){
+	kprintf("BusFault\n");
+}    
+void UsageFault_handler(){
+	kprintf("UsageFault\n");
+}
+void DebugMonitor_handler(){
+	kprintf("DebugMonitor\n");
+}
+void default_handler()
+{
+	kprintf("I am default_handler!\n");
 }

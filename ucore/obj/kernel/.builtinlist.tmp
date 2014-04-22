@@ -4,8 +4,6 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/pipe/builtin.o
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/vfs/builtin.o
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/sfs/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/fatfs/fatfs/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/fatfs/builtin.o
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/builtin.o
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/process/builtin.o
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/mm/builtin.o
@@ -23,17 +21,4 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/arch/arm/syscall/builtin.o
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/arch/arm/trap/builtin.o
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/arch/arm/kmodule/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/arch/arm/mach-goldfish/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/drivers/base/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/drivers/input/keyboard/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/drivers/input/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/drivers/video/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/drivers/mmc/core/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/fs/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/kernel/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/lib/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/include/mach/lib/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/ucore_glue/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/example/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/goldfishdrv/builtin.o
-/home/liangchao/MyWork/graduate/ucore/obj/kernel/module/builtin.o
+/home/liangchao/MyWork/graduate/ucore/obj/kernel/arch/arm/m3/builtin.o

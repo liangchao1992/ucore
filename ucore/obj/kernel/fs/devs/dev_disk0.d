@@ -1,6 +1,5 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/devs/dev_disk0.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/devs/dev_disk0.d: \
  dev_disk0.c /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mm/mmu.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/mm/slab.h \

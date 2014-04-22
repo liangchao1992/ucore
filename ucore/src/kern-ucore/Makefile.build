@@ -5,7 +5,7 @@ endif
 PHONY+=all subdir clean
 
 #TARGET_CFLAGS := -g -ggdb
-TARGET_CFLAGS += -fno-builtin -nostdlib  -nostdinc
+TARGET_CFLAGS += -fno-builtin -nostdlib  -nostdinc 
 TARGET_CFLAGS += -D__KERNEL__ -D__KERN__ 
 TARGET_CFLAGS += $(shell echo $(UCONFIG_ADDITIONAL_CFLAGS))
 ifdef UCONFIG_PROFILER_ON
@@ -27,7 +27,6 @@ KERN_INCLUDES += module/include
 endif
 
 TARGET_CFLAGS += $(addprefix -I$(KTREE)/, $(KERN_INCLUDES))
-
 TARGET_CFLAGS += -include $(KCONFIG_AUTOHEADER)
 ifneq ($(UCORE_TEST),)
 TARGET_CFLAGS += -DUNITTEST=$(UCORE_TEST)
@@ -59,7 +58,6 @@ $(KERNEL_BUILTIN_O): subdir
 
 $(KTREE_OBJ_ROOT):
 	mkdir -p $@
-
 clean:
 	$(Q)rm -rf $(KTREE_OBJ_ROOT)
 	$(Q)$(MAKE)  -C $(KTREE)/arch/$(ARCH) -f $(KTREE)/arch/$(ARCH)/Makefile.image clean

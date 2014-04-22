@@ -1,580 +1,372 @@
-#
-# Chen Yuheng 2012/3
-#
 
-#include <mmu.h>
-#include <memlayout.h>
-#include <board.h>
-#include <pgtable-hwdef.h>
-#include <mmu.h>
-
-
-#define PAGE_OFFSET		0xc0000000
-#define TEXT_OFFSET		0x8000
-#define PHYS_OFFSET		UCONFIG_DRAM_START
-
-
-#define __virt_to_phys(x)	((x) - PAGE_OFFSET + PHYS_OFFSET)
-#define __phys_to_virt(x)	((x) - PHYS_OFFSET + PAGE_PFFSET)
-
-#if (SDRAM0_START & 0x001fffff)
-#error "SDRAM0_START must be at an even 2MiB boundary!"
-#endif
-
-
-#ifdef CONFIG_XIP_KERNEL
-#define KERNEL_START	XIP_VIRT_ADDR(CONFIG_XIP_PHYS_ADDR)
-#define KERNEL_END	_edata_loc
-#else
-#define KERNEL_START	KERNEL_RAM_VADDR
-#define KERNEL_END	_end
-#endif
-
-
-#define KERNEL_RAM_VADDR	(PAGE_OFFSET + TEXT_OFFSET)
-##if (KERNEL_RAM_VADDR & 0xffff) != 0x8000
-##error KERNEL_RAM_VADDR must start at 0xXXXX8000
-##endif
-
-
-
-
-
-
-.text
-.equ DISABLE_IRQ, 0x80
-.equ DISABLE_FIQ, 0x40
-.equ SYS_MOD, 0x1f
-.equ IRQ_MOD, 0x12
-.equ FIQ_MOD, 0x11
-.equ SVC_MOD, 0x13
-.equ ABT_MOD, 0x17
-.equ UND_MOD, 0x1b
-
-.equ MEM_SIZE, SDRAM0_SIZE 
-.equ TEXT_BASE, SDRAM0_START
-
-
-	.macro	pgtbl, rd
-	ldr	\rd, =(__virt_to_phys(KERNEL_RAM_VADDR - 0x4000))
-	.endm
-
-
-# assuming:
-# MMU off, D-cache off
-.section .entrytext, "a"
-.globl kern_entry
-kern_entry:
-  mrs r0, cpsr
-	bic r0, r0, #(DISABLE_FIQ|DISABLE_IRQ)
-	msr cpsr, r0
-
-# Stack inititialization - starts in SVC mode
-# only 12bytes are used in these stacks, see trapentry.S
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|IRQ_MOD)
-	ldr sp,=irq_stack
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|FIQ_MOD)
-	ldr sp,=fiq_stack
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|ABT_MOD)
-	ldr sp,=abt_stack
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|UND_MOD)
-	ldr sp,=und_stack
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|SYS_MOD)
-	ldr sp,=sys_stacktop
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|SVC_MOD)
-
-#in SVC mode
-relocated:
-    ldr sp,=bootstacktop
-
-
-#ifdef UCONFIG_FPU_ENABLE
-
-    # enable the FPU
-    mrc p15, 0, r0, c1, c0, 2
-    orr r0, r0, #0x300000            /* single precision */
-    orr r0, r0, #0xC00000            /* double precision */
-    mcr p15, 0, r0, c1, c0, 2
-    mov r0, #0x40000000
-    fmxr fpexc,r0
-
-#endif //UCONFIG_FPU_ENABLE
-
-
-
-/* enable swp,flow prediction */
-#ifdef __MACH_ARM_CORTEX_A9
-  ldr r1, =(1<<11)|(1<<10)
-  MCR p15, 0, r1, c1, c0, 0
-#endif
-
-#  b kern_init
-.globl ttest
-ttest:
-	bl __create_pgtbl
-
-#	ldr r13, kern_init
-#	ldr r13, =kern_init
-
-	b __enable_mmu
-
-# now kernel stack is ready , call the first C function
-    b kern_init
-
-# should never get here
-    spin:
-    b spin
-
-###################################################################
-
-mm_mmuflag:
-.long	PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ
-# | PMD_FLAGS_SMP
-#.long   PMD_TYPE_SECT | PMD_SECT_BUFFERABLE | PMD_SECT_CACHEABLE | PMD_BIT4 | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ
-#.long   PMD_TYPE_SECT | PMD_BIT4 | PMD_SECT_AP_WRITE | PMD_SECT_AP_READ
-
-control_access_value:
-.long	DOM3CLT
-
-control_access_mask:
-.long	CHANGEALLDOM
-
-
-#ifdef __MACH_ARM_ARMV6
-mmu_value:
-.long  ENABLEMMU | ENABLEICACHE | ENABLEDCACHE | ENABLEHIGHEVT | ENABLENEWPT
-mmu_mask:
-.long  CHANGEMMU | CHANGEICACHE | CHANGEDCACHE | CHANGEHIGHEVT | CHANGENEWPT
-#elif defined __MACH_ARM_ARMV7
-mmu_value:
-.long	ENABLEMMU | ENABLEICACHE | ENABLEDCACHE | ENABLEHIGHEVT
-mmu_mask:
-.long	CHANGEMMU | CHANGEICACHE | CHANGEDCACHE | CHANGEHIGHEVT
-#else
-#error Unsupported arch
-#endif
-
-__create_pgtbl:
-	pgtbl	r4
-
-	mov r0, r4
-	mov r3, #0
-	add r6, r0, #0x4000
-1:	str	r3, [r0], #4
-	str	r3, [r0], #4
-	str	r3, [r0], #4
-	str	r3, [r0], #4
-	teq	r0, r6
-	bne	1b
-
-#	mov r7, #mm_mmuflag
-#	ldr r7, [r7, #0]
-	ldr r7, =mm_mmuflag
-	eor r7, r7, #0xc << 28
-	ldr r7, [r7]
-
-	# map 0x0 to 0x0
-	ldr r6, =0
-	orr r6, r6, r7
-	str r6, [r4]
-
-	# map first section
-	mov r6, pc, lsr #20
-	orr r3, r7, r6, lsl #20
-	str r3, [r4, r6, lsl #2]
-
-	# map first kernel section
-	add r0, r4, #(KERNEL_RAM_VADDR & 0xff000000) >> 18
-	str r3, [r0, #(KERNEL_RAM_VADDR & 0x00f00000) >> 18]!
-
-#	ldr r6, =(end - PAGE_OFFSET - 1)
-#	ldr r6, =(end - PAGE_OFFSET - 1)
-	ldr r6, =(KMEMSIZE - 1)
-	mov r6, r6, lsr #20
-
-	#add some more memory for dynamically allocation
-#	add r6, r6, #23
-
-1:	add r3, r3, #1 << 20
-	str r3, [r0, #4]!
-	subs r6, r6, #1
-	bgt 1b
-
-	add r0, r4, #PAGE_OFFSET >> 18
-	orr r6, r7, #PHYS_OFFSET
-	str r6, [r0]
-
-	# map io space to new page table
-	ldr r6, =IO_SPACE_START
-	mov r6, r6, lsr #20
-	mov r0, r6
-	orr r3, r7, r6, lsl #20
-#	str r3, [r4, r6, lsl #2]
-
-	add r0, r4, r0, lsl #2
-
-	ldr r6, =IO_SPACE_SIZE
-	mov r6, r6, lsr #20
-
-1:	str r3, [r0]
-	add r0, r0, #4
-	add r3, r3, #1 << 20
-	subs r6, r6, #1
-	bgt 1b
-
-
-	mov pc, lr
-
-
-	.ltorg
-	.align
-__enable_mmu_loc:
-	.long	.
-	.long	__enable_mmu
-	.long	__enable_mmu_end
+    .syntax unified
 
 /*
-   r0, r1, r2
+ * Imports external symbols
+ */
+    .extern kern_init
+    .extern SysTickHandler
+    .extern __data_org, __data_start, __data_end
+    .extern __bss_start, __bss_end, __stack_top
+ .globl  __kuser_helper_start
+ 	 __kuser_helper_start:
+ 
+ .globl  __kuser_helper_end
+           __kuser_helper_end:
+
+
+/*
+ * Vector Table
+ */
+    .section .vector,"ax"
+    .align 4
+    .global __Vectors, __Vectors_End
+__Vectors:
+    /*Details in ARMv7M_Ref,pdf page 430*/
+     /*    Internal Exceptions Vector Define                                        */
+    .long   __stack_top                          /* 00: Top of Main Stack           */
+    .long   reset_handler                        /* 01: Reset Handler               */
+    .long   NMI_handler                      /* 02: NMI Handler                 */
+    .long   HardFault_handler                      /* 03: Hard Fault Handler          */
+    .long   MPUFault_handler                      /* 04: MPU Fault Handler           */
+    .long   BusFault_handler                      /* 05: Bus Fault Handler           */
+    .long   UsageFault_handler                      /* 06: Usage Fault Handler         */
+    .long   0                                    /* 07: Reserved                    */
+    .long   0                                    /* 08: Reserved                    */
+    .long   0                                    /* 09: Reserved                    */
+    .long   0                                    /* 10: Reserved                    */
+    .long   0                                    /* 11: SVCall Handler              */
+    .long   DebugMonitor_handler                      /* 12: Debug Monitor Handler       */
+    .long   0                                    /* 13: Reserved                    */
+    .long   0	                                    /* 14: PendSV Handler              */
+    .long   0		                      /* 15: Systick handler             */
+
+    /*    External Interrupts Vector Define                                         */
+    .long   default_handler                      /* 16: */
+    .long   default_handler                      /* 17: */
+    .long   default_handler                      /* 18: */
+    .long   default_handler                      /* 19: */
+    .long   default_handler                      /* 20: */
+    .long   default_handler                      /* 21: */
+    .long   default_handler                      /* 22: */
+    .long   default_handler                      /* 23: */
+    .long   default_handler                      /* 24: */
+    .long   default_handler                      /* 25: */
+    .long   default_handler                      /* 26: */
+    .long   default_handler                      /* 27: */
+    .long   default_handler                      /* 28: */
+    .long   default_handler                      /* 29: */
+    .long   default_handler                      /* 30: */
+    .long   default_handler                      /* 31: */
+    .long   default_handler                      /* 32: */
+    .long   default_handler                      /* 33: */
+    .long   default_handler                      /* 34: */
+    .long   default_handler                      /* 35: */
+    .long   default_handler                      /* 36: */
+    .long   default_handler                      /* 37: */
+    .long   default_handler                      /* 38: */
+    .long   default_handler                      /* 39: */
+    .long   default_handler                      /* 40: */
+    .long   default_handler                      /* 41: */
+    .long   default_handler                      /* 42: */
+    .long   default_handler                      /* 43: */
+    .long   default_handler                      /* 44: */
+    .long   default_handler                      /* 45: */
+    .long   default_handler                      /* 46: */
+    .long   default_handler                      /* 47: */
+    .long   default_handler                      /* 48: */
+    .long   default_handler                      /* 49: */
+    .long   default_handler                      /* 50: */
+    .long   default_handler                      /* 51: */
+    .long   default_handler                      /* 52: */
+    .long   default_handler                      /* 53: */
+    .long   default_handler                      /* 54: */
+    .long   default_handler                      /* 55: */
+    .long   default_handler                      /* 56: */
+    .long   default_handler                      /* 57: */
+    .long   default_handler                      /* 58: */
+    .long   default_handler                      /* 59: */
+    .long   default_handler                      /* 60: */
+    .long   default_handler                      /* 61: */
+    .long   default_handler                      /* 62: */
+    .long   default_handler                      /* 63: */
+    .long   default_handler                      /* 64: */
+    .long   default_handler                      /* 65: */
+    .long   default_handler                      /* 66: */
+    .long   default_handler                      /* 67: */
+    .long   default_handler                      /* 68: */
+    .long   default_handler                      /* 69: */
+    .long   default_handler                      /* 70: */
+    .long   default_handler                      /* 71: */
+    .long   default_handler                      /* 72: */
+    .long   default_handler                      /* 73: */
+    .long   default_handler                      /* 74: */
+    .long   default_handler                      /* 75: */
+    .long   default_handler                      /* 76: */
+    .long   default_handler                      /* 77: */
+    .long   default_handler                      /* 78: */
+    .long   default_handler                      /* 79: */
+    .long   default_handler                      /* 80: */
+    .long   default_handler                      /* 81: */
+    .long   default_handler                      /* 82: */
+    .long   default_handler                      /* 83: */
+    .long   default_handler                      /* 84: */
+    .long   default_handler                      /* 85: */
+    .long   default_handler                      /* 86: */
+    .long   default_handler                      /* 87: */
+    .long   default_handler                      /* 88: */
+    .long   default_handler                      /* 89: */
+    .long   default_handler                      /* 90: */
+    .long   default_handler                      /* 91: */
+    .long   default_handler                      /* 92: */
+    .long   default_handler                      /* 93: */
+    .long   default_handler                      /* 94: */
+    .long   default_handler                      /* 95: */
+    .long   default_handler                      /* 96: */
+    .long   default_handler                      /* 97: */
+    .long   default_handler                      /* 98: */
+    .long   default_handler                      /* 99: */
+    .long   default_handler                      /* 100: */
+    .long   default_handler                      /* 101: */
+    .long   default_handler                      /* 102: */
+    .long   default_handler                      /* 103: */
+    .long   default_handler                      /* 104: */
+    .long   default_handler                      /* 105: */
+    .long   default_handler                      /* 106: */
+    .long   default_handler                      /* 107: */
+    .long   default_handler                      /* 108: */
+    .long   default_handler                      /* 109: */
+    .long   default_handler                      /* 110: */
+    .long   default_handler                      /* 111: */
+    .long   default_handler                      /* 112: */
+    .long   default_handler                      /* 113: */
+    .long   default_handler                      /* 114: */
+    .long   default_handler                      /* 115: */
+    .long   default_handler                      /* 116: */
+    .long   default_handler                      /* 117: */
+    .long   default_handler                      /* 118: */
+    .long   default_handler                      /* 119: */
+    .long   default_handler                      /* 120: */
+    .long   default_handler                      /* 121: */
+    .long   default_handler                      /* 122: */
+    .long   default_handler                      /* 123: */
+    .long   default_handler                      /* 124: */
+    .long   default_handler                      /* 125: */
+    .long   default_handler                      /* 126: */
+    .long   default_handler                      /* 127: */
+    .long   default_handler                      /* 128: */
+    .long   default_handler                      /* 129: */
+    .long   default_handler                      /* 130: */
+    .long   default_handler                      /* 131: */
+    .long   default_handler                      /* 132: */
+    .long   default_handler                      /* 133: */
+    .long   default_handler                      /* 134: */
+    .long   default_handler                      /* 135: */
+    .long   default_handler                      /* 136: */
+    .long   default_handler                      /* 137: */
+    .long   default_handler                      /* 138: */
+    .long   default_handler                      /* 139: */
+    .long   default_handler                      /* 140: */
+    .long   default_handler                      /* 141: */
+    .long   default_handler                      /* 142: */
+    .long   default_handler                      /* 143: */
+    .long   default_handler                      /* 144: */
+    .long   default_handler                      /* 145: */
+    .long   default_handler                      /* 146: */
+    .long   default_handler                      /* 147: */
+    .long   default_handler                      /* 148: */
+    .long   default_handler                      /* 149: */
+    .long   default_handler                      /* 150: */
+    .long   default_handler                      /* 151: */
+    .long   default_handler                      /* 152: */
+    .long   default_handler                      /* 153: */
+    .long   default_handler                      /* 154: */
+    .long   default_handler                      /* 155: */
+    .long   default_handler                      /* 156: */
+    .long   default_handler                      /* 157: */
+    .long   default_handler                      /* 158: */
+    .long   default_handler                      /* 159: */
+    .long   default_handler                      /* 160: */
+    .long   default_handler                      /* 161: */
+    .long   default_handler                      /* 162: */
+    .long   default_handler                      /* 163: */
+    .long   default_handler                      /* 164: */
+    .long   default_handler                      /* 165: */
+    .long   default_handler                      /* 166: */
+    .long   default_handler                      /* 167: */
+    .long   default_handler                      /* 168: */
+    .long   default_handler                      /* 169: */
+    .long   default_handler                      /* 170: */
+    .long   default_handler                      /* 171: */
+    .long   default_handler                      /* 172: */
+    .long   default_handler                      /* 173: */
+    .long   default_handler                      /* 174: */
+    .long   default_handler                      /* 175: */
+    .long   default_handler                      /* 176: */
+    .long   default_handler                      /* 177: */
+    .long   default_handler                      /* 178: */
+    .long   default_handler                      /* 179: */
+    .long   default_handler                      /* 180: */
+    .long   default_handler                      /* 181: */
+    .long   default_handler                      /* 182: */
+    .long   default_handler                      /* 183: */
+    .long   default_handler                      /* 184: */
+    .long   default_handler                      /* 185: */
+    .long   default_handler                      /* 186: */
+    .long   default_handler                      /* 187: */
+    .long   default_handler                      /* 188: */
+    .long   default_handler                      /* 189: */
+    .long   default_handler                      /* 190: */
+    .long   default_handler                      /* 191: */
+    .long   default_handler                      /* 192: */
+    .long   default_handler                      /* 193: */
+    .long   default_handler                      /* 194: */
+    .long   default_handler                      /* 195: */
+    .long   default_handler                      /* 196: */
+    .long   default_handler                      /* 197: */
+    .long   default_handler                      /* 198: */
+    .long   default_handler                      /* 199: */
+    .long   default_handler                      /* 200: */
+    .long   default_handler                      /* 201: */
+    .long   default_handler                      /* 202: */
+    .long   default_handler                      /* 203: */
+    .long   default_handler                      /* 204: */
+    .long   default_handler                      /* 205: */
+    .long   default_handler                      /* 206: */
+    .long   default_handler                      /* 207: */
+    .long   default_handler                      /* 208: */
+    .long   default_handler                      /* 209: */
+    .long   default_handler                      /* 210: */
+    .long   default_handler                      /* 211: */
+    .long   default_handler                      /* 212: */
+    .long   default_handler                      /* 213: */
+    .long   default_handler                      /* 214: */
+    .long   default_handler                      /* 215: */
+    .long   default_handler                      /* 216: */
+    .long   default_handler                      /* 217: */
+    .long   default_handler                      /* 218: */
+    .long   default_handler                      /* 219: */
+    .long   default_handler                      /* 220: */
+    .long   default_handler                      /* 221: */
+    .long   default_handler                      /* 222: */
+    .long   default_handler                      /* 223: */
+    .long   default_handler                      /* 224: */
+    .long   default_handler                      /* 225: */
+    .long   default_handler                      /* 226: */
+    .long   default_handler                      /* 227: */
+    .long   default_handler                      /* 228: */
+    .long   default_handler                      /* 229: */
+    .long   default_handler                      /* 230: */
+    .long   default_handler                      /* 231: */
+    .long   default_handler                      /* 232: */
+    .long   default_handler                      /* 233: */
+    .long   default_handler                      /* 234: */
+    .long   default_handler                      /* 235: */
+    .long   default_handler                      /* 236: */
+    .long   default_handler                      /* 237: */
+    .long   default_handler                      /* 238: */
+    .long   default_handler                      /* 239: */
+    .long   default_handler                      /* 240: */
+    .long   default_handler                      /* 241: */
+    .long   default_handler                      /* 242: */
+    .long   default_handler                      /* 243: */
+    .long   default_handler                      /* 244: */
+    .long   default_handler                      /* 245: */
+    .long   default_handler                      /* 246: */
+    .long   default_handler                      /* 247: */
+    .long   default_handler                      /* 248: */
+    .long   default_handler                      /* 249: */
+    .long   default_handler                      /* 250: */
+    .long   default_handler                      /* 251: */
+    .long   default_handler                      /* 252: */
+    .long   default_handler                      /* 253: */
+    .long   default_handler                      /* 254: */
+    .long   default_handler                      /* 255: */
+__Vectors_End:
+
+/*
+ * Reset handle routine
+ */
+    .section .text,"ax"
+    .align  2
+    .global reset_handler
+    .type   reset_handler,function
+reset_handler:
+    cpsid   i                                    /*Disable interrupt  */
+
+
+/*     Loop to copy data from read only memory to RAM. The ranges
+ *      of copy from/to are specified by following symbols evaluated in
+ *      linker script.
+ *      __data_org: End of code section, i.e., begin of data sections to copy from.
+ *      __data_start__/__data_end__: RAM address range that data should be
+ *      copied to. Both must be aligned to 4 bytes boundary.
+ */
+    ldr     r1, =__data_org                      /* src address */
+    ldr     r2, =__data_start                    /* dst address */
+    ldr     r3, =__data_end
+    subs    r3, r3, r2                           /* r3 := data_size */
+    beq     data_done                            /* if __data_start == __data_end */
+
+data_loop:
+    ldmia   r1!, {r0}
+    stmia   r2!, {r0}
+    subs    r3,  #4
+    bne     data_loop                            /* if data_size != 0 */
+data_done:
+
+#define __STARTUP_CLEAR_BSS   /*Or, the bss will not be zeroed. So I define this macro to enable the following piece of code. WuZhenwei, April 9,2014*/
+
+#ifdef __STARTUP_CLEAR_BSS
+/*     This part of work usually is done in C library startup code. Otherwise,
+ *     define this macro to enable it in this startup.
+ *
+ *     Loop to zero out BSS section, which uses following symbols
+ *     in linker script:
+ *      __bss_start: start of BSS section. Must align to 4
+ *      __bss_end: end of BSS section. Must align to 4
+ */
+    ldr     r1, =__bss_start                     /* dst address */
+    ldr     r2, =__bss_end
+    subs    r2, r2, r1                           /* r2 := bss_size */
+    beq     bss_done                             /* if __bss_start == __bss_end */
+    mov     r0, #0
+
+bss_loop:
+    stmia   r1!, {r0}
+    subs    r2,  #4
+    bne     bss_loop                             /* if bss_size != 0 */
+bss_done:
+#endif /* __STARTUP_CLEAR_BSS */
+
+/*
+ *  Goto main entry
+ */
+    /*cpsie   i*/
+    ldr     r12, =kern_init
+    mov     r0, #0
+    blx     r12
+reset_end:
+    b       reset_end
+/*
+ * Systick handler
+ */
+/*    .global systick_handler
+    .type systick_handler,function
+systick_handler:
+    ldr	  r12, =SysTickHandler
+    mov   r0,#0
+    blx   r12
+    bx    lr
 */
-__enable_mmu:
-
-	mcr	p15, 0, r4, c2, c0, 0		@ load page table pointer
-
-	#set domain access
-	mrc p15, 0, r0, c3, c0, 0
-	ldr r1, control_access_value
-	ldr r2, control_access_mask
-	mvn r2, r2
-	and r0, r0, r2
-	orr	r0, r0, r1
-	mcr p15, 0, r0, c3, c0, 0
-
-	#enable cache
-	mrc p15, 0, r0, c1, c0, 0
-	ldr r1, mmu_value
-	ldr r2, mmu_mask
-	mvn r2, r2
-	and r0, r0, r2
-	orr r0, r0, r1
-	mcr p15, 0, r0, c1, c0, 0
-
-	ldr r0, =kern_init
-
-	# initialize the stack top
-	ldr sp,=bootstacktop
-
-	mov r0, r0
-	mov r0, r0
-	mov r0, r0
-
-	# goto kern_init
-	mov pc, r0
-
-__enable_mmu_end:
-
-
-
-
-
-
-
-
-    .data
-    .align 6
-# There might be a alignment problem, as should be aligned to a page size
-irq_stack:
-.space 64
-irq_stacktop:
-fiq_stack:
-.space 64
-fiq_stacktop:
-abt_stack:
-.space 64
-abt_stacktop:
-und_stack:
-.space 64
-und_stacktop:
-sys_stack:
-.space 64
-sys_stacktop:
-    .globl bootstack
-bootstack:
-    .space KSTACKSIZE
-    .globl bootstacktop
-bootstacktop:
-
 /*
-.section data_initpg, "a"
-initpg:
-	.space 4096*4
-initpgend:
+ * Default exeception and interrupt process handler define
+ */
+/*
+    .global default_handler
+    .type   default_handler,function
+default_handler:
+    b       default_handler
+
+    .end
 */
-
-
-/*
- * User helpers.
- *
- * These are segment of kernel provided user code reachable from user space
- * at a fixed address in kernel memory.  This is used to provide user space
- * with some operations which require kernel help because of unimplemented
- * native feature and/or instructions in many ARM CPUs. The idea is for
- * this code to be executed directly in user mode for best efficiency but
- * which is too intimate with the kernel counter part to be left to user
- * libraries.  In fact this code might even differ from one CPU to another
- * depending on the available  instruction set and restrictions like on
- * SMP systems.  In other words, the kernel reserves the right to change
- * this code as needed without warning. Only the entry points and their
- * results are guaranteed to be stable.
- *
- * Each segment is 32-byte aligned and will be moved to the top of the high
- * vector page.  New segments (if ever needed) must be added in front of
- * existing ones.  This mechanism should be used only for things that are
- * really small and justified, and not be abused freely.
- *
- * User space is expected to implement those things inline when optimizing
- * for a processor that has the necessary native support, but only if such
- * resulting binaries are already to be incompatible with earlier ARM
- * processors due to the use of unsupported instructions other than what
- * is provided here.  In other words don't make binaries unable to run on
- * earlier processors just for the sake of not using these kernel helpers
- * if your compiled code is not going to use the new instructions for other
- * purpose.
- */
-/* THUMB(	.arm	)*/
-
-	.macro	usr_ret, reg
-#ifdef CONFIG_ARM_THUMB
-	bx	\reg
-#else
-	mov	pc, \reg
-#endif
-	.endm
-
-	.align	5
-	.globl	__kuser_helper_start
-__kuser_helper_start:
-
-/*
- * Reference prototype:
- *
- *	void __kernel_memory_barrier(void)
- *
- * Input:
- *
- *	lr = return address
- *
- * Output:
- *
- *	none
- *
- * Clobbered:
- *
- *	none
- *
- * Definition and user space usage example:
- *
- *	typedef void (__kernel_dmb_t)(void);
- *	#define __kernel_dmb (*(__kernel_dmb_t *)0xffff0fa0)
- *
- * Apply any needed memory barrier to preserve consistency with data modified
- * manually and __kuser_cmpxchg usage.
- *
- * This could be used as follows:
- *
- * #define __kernel_dmb() \
- *         asm volatile ( "mov r0, #0xffff0fff; mov lr, pc; sub pc, r0, #95" \
- *	        : : : "r0", "lr","cc" )
- */
-
-__kuser_memory_barrier:				@ 0xffff0fa0
-	/*smp_dmb	arm*/
-	usr_ret	lr
-
-	.align	5
-
-/*
- * Reference prototype:
- *
- *	int __kernel_cmpxchg(int oldval, int newval, int *ptr)
- *
- * Input:
- *
- *	r0 = oldval
- *	r1 = newval
- *	r2 = ptr
- *	lr = return address
- *
- * Output:
- *
- *	r0 = returned value (zero or non-zero)
- *	C flag = set if r0 == 0, clear if r0 != 0
- *
- * Clobbered:
- *
- *	r3, ip, flags
- *
- * Definition and user space usage example:
- *
- *	typedef int (__kernel_cmpxchg_t)(int oldval, int newval, int *ptr);
- *	#define __kernel_cmpxchg (*(__kernel_cmpxchg_t *)0xffff0fc0)
- *
- * Atomically store newval in *ptr if *ptr is equal to oldval for user space.
- * Return zero if *ptr was changed or non-zero if no exchange happened.
- * The C flag is also set if *ptr was changed to allow for assembly
- * optimization in the calling code.
- *
- * Notes:
- *
- *    - This routine already includes memory barriers as needed.
- *
- * For example, a user space atomic_add implementation could look like this:
- *
- * #define atomic_add(ptr, val) \
- *	({ register unsigned int *__ptr asm("r2") = (ptr); \
- *	   register unsigned int __result asm("r1"); \
- *	   asm volatile ( \
- *	       "1: @ atomic_add\n\t" \
- *	       "ldr	r0, [r2]\n\t" \
- *	       "mov	r3, #0xffff0fff\n\t" \
- *	       "add	lr, pc, #4\n\t" \
- *	       "add	r1, r0, %2\n\t" \
- *	       "add	pc, r3, #(0xffff0fc0 - 0xffff0fff)\n\t" \
- *	       "bcc	1b" \
- *	       : "=&r" (__result) \
- *	       : "r" (__ptr), "rIL" (val) \
- *	       : "r0","r3","ip","lr","cc","memory" ); \
- *	   __result; })
- */
-
-__kuser_cmpxchg:				@ 0xffff0fc0
-
-#if defined(CONFIG_NEEDS_SYSCALL_FOR_CMPXCHG)
-
-	/*
-	 * Poor you.  No fast solution possible...
-	 * The kernel itself must perform the operation.
-	 * A special ghost syscall is used for that (see traps.c).
-	 */
-	stmfd	sp!, {r7, lr}
-	ldr	r7, 1f			@ it's 20 bits
-	swi	__ARM_NR_cmpxchg
-	ldmfd	sp!, {r7, pc}
-1:	.word	__ARM_NR_cmpxchg
-
-#elif __LINUX_ARM_ARCH__ < 6
-
-#ifdef CONFIG_MMU
-
-	/*
-	 * The only thing that can break atomicity in this cmpxchg
-	 * implementation is either an IRQ or a data abort exception
-	 * causing another process/thread to be scheduled in the middle
-	 * of the critical sequence.  To prevent this, code is added to
-	 * the IRQ and data abort exception handlers to set the pc back
-	 * to the beginning of the critical section if it is found to be
-	 * within that critical section (see kuser_cmpxchg_fixup).
-	 */
-1:	ldr	r3, [r2]			@ load current val
-	subs	r3, r3, r0			@ compare with oldval
-2:	streq	r1, [r2]			@ store newval if eq
-	rsbs	r0, r3, #0			@ set return val and C flag
-	usr_ret	lr
-
-	.text
-kuser_cmpxchg_fixup:
-	@ Called from kuser_cmpxchg_check macro.
-	@ r2 = address of interrupted insn (must be preserved).
-	@ sp = saved regs. r7 and r8 are clobbered.
-	@ 1b = first critical insn, 2b = last critical insn.
-	@ If r2 >= 1b and r2 <= 2b then saved pc_usr is set to 1b.
-	mov	r7, #0xffff0fff
-	sub	r7, r7, #(0xffff0fff - (0xffff0fc0 + (1b - __kuser_cmpxchg)))
-	subs	r8, r2, r7
-	rsbcss	r8, r8, #(2b - 1b)
-	strcs	r7, [sp, #S_PC]
-	mov	pc, lr
-	.previous
-
-#else
-#warning "NPTL on non MMU needs fixing"
-	mov	r0, #-1
-	adds	r0, r0, #0
-	usr_ret	lr
-#endif
-
-#else
-
-	/*smp_dmb	arm*/
-1:	ldrex	r3, [r2]
-	subs	r3, r3, r0
-	strexeq	r3, r1, [r2]
-	teqeq	r3, #1
-	beq	1b
-	rsbs	r0, r3, #0
-	/* beware -- each __kuser slot must be 8 instructions max */
-	/*ALT_SMP(b	__kuser_memory_barrier)*/
-	/*ALT_UP(usr_ret	lr)*/
-
-#endif
-
-	.align	5
-
-/*
- * Reference prototype:
- *
- *	int __kernel_get_tls(void)
- *
- * Input:
- *
- *	lr = return address
- *
- * Output:
- *
- *	r0 = TLS value
- *
- * Clobbered:
- *
- *	none
- *
- * Definition and user space usage example:
- *
- *	typedef int (__kernel_get_tls_t)(void);
- *	#define __kernel_get_tls (*(__kernel_get_tls_t *)0xffff0fe0)
- *
- * Get the TLS value as previously set via the __ARM_NR_set_tls syscall.
- *
- * This could be used as follows:
- *
- * #define __kernel_get_tls() \
- *	({ register unsigned int __val asm("r0"); \
- *         asm( "mov r0, #0xffff0fff; mov lr, pc; sub pc, r0, #31" \
- *	        : "=r" (__val) : : "lr","cc" ); \
- *	   __val; })
- */
-
-__kuser_get_tls:				@ 0xffff0fe0
-	ldr	r0, [pc, #(16 - 8)]	@ read TLS, set in kuser_get_tls_init
-	usr_ret	lr
-	mrc	p15, 0, r0, c13, c0, 3	@ 0xffff0fe8 hardware TLS code
-	.rep	4
-	.word	0			@ 0xffff0ff0 software TLS value, then
-	.endr				@ pad up to __kuser_helper_version
-
-/*
- * Reference declaration:
- *
- *	extern unsigned int __kernel_helper_version;
- *
- * Definition and user space usage example:
- *
- *	#define __kernel_helper_version (*(unsigned int *)0xffff0ffc)
- *
- * User space may read this to determine the curent number of helpers
- * available.
- */
-
-__kuser_helper_version:				@ 0xffff0ffc
-	.word	((__kuser_helper_end - __kuser_helper_start) >> 5)
-
-	.globl	__kuser_helper_end
-__kuser_helper_end:

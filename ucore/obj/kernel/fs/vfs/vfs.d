@@ -1,6 +1,5 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/vfs/vfs.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/vfs/vfs.d: \
  vfs.c /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/stdio.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/stdarg.h \

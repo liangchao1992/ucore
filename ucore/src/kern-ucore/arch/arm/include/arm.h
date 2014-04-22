@@ -154,11 +154,9 @@ inline static void ttbSet(uint32_t ttb)
 #define ARM_SR_T          (1<<5)
 
 //in ./libs
-void *__memset(void *s, char c, size_t n) __attribute__ ((always_inline));
-void *__memmove(void *dst, const void *src, size_t n)
-    __attribute__ ((always_inline));
-void *__memcpy(void *dst, const void *src, size_t n)
-    __attribute__ ((always_inline));
+void *__memmove(void *dst, const void *src, size_t n);
+void *__memset(void *s, char c, size_t n);
+void *__memcpy(void * dst,const void *src,size_t n);
 
 #define __HAVE_ARCH_MEMSET
 #define __HAVE_ARCH_MEMMOVE

@@ -1,6 +1,5 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/sfs/sfs_fs.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/sfs/sfs_fs.d: \
  sfs_fs.c /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/stdio.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/stdarg.h \

@@ -1,6 +1,5 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/pipe/pipe_root.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/pipe/pipe_root.d: \
  pipe_root.c /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/string.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/fs/vfs/vfs.h \

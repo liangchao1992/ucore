@@ -30,7 +30,7 @@ endif
 
 $(KERNEL_ELF) : $(LINK_FILE_IN) $(KERNEL_BUILTIN) $(RAMDISK_OBJ) $(DRIVERS_O)
 	@echo Linking uCore
-	$(Q)$(TARGET_LD) -T $(LINK_FILE_IN)  $(KERNEL_BUILTIN) $(RAMDISK_OBJ) libgcc.a $(DRIVERS_O) -o $@
+	$(Q)$(TARGET_LD) -T $(LINK_FILE_IN)  $(KERNEL_BUILTIN) $(RAMDISK_OBJ) libgcc.a $(DRIVERS_O)  -o $@
 
 $(KERNEL_UIMAGE) : $(KERNEL_ELF)
 	@echo Making uImage

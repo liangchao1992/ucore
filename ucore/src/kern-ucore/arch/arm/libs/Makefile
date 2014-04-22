@@ -1,3 +1,2 @@
-obj-y := div64.o eabi_utils.o memcpy.o memmove.o memset.o
+obj-y := eabi_utils.o  mem.o  div64.o
 
-obj-$(UCONFIG_HAVE_LINUX_DDE_BASE) += delay.o

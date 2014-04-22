@@ -147,13 +147,18 @@
 #define PTEX_W   0x010		// supervisor rw, user no_access
 #define PTEX_U   0x020		// supervisor rw, user ro
 #define PTEX_UW  0x030		// supervisor rw, user rw
-#elif defined __MACH_ARM_ARMV7
+#elif defined __MACH_ARM_ARMV7m
 #define PTEX_R   0x210		// Supervisor/Readonly
 #define PTEX_W   0x010		// Supervisor/Write
 #define PTEX_U   0x020		// Supervisor/Write _ User/Read Only
 #define PTEX_UW  0x030		// Supervisor/Write _ User/Write
 #else
-#error Unknown ARM CPU type
+//#error Unknown ARM CPU type
+#define PTEX_R   0x210		// Supervisor/Readonly
+#define PTEX_W   0x010		// Supervisor/Write
+#define PTEX_U   0x020		// Supervisor/Write _ User/Read Only
+#define PTEX_UW  0x030		// Supervisor/Write _ User/Write
+//here just for compile
 #endif
 
 /* Chen Yuheng */

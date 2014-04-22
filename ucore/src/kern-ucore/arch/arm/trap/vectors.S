@@ -16,14 +16,14 @@
 .align 4
 
 __vector_table:
-	b  _vector_reset
-	ldr pc,_vector_undefined
-	ldr pc,_vector_swi
-	ldr pc,_vector_prefetch_abort
-	ldr pc,_vector_data_abort
-	ldr pc,_vector_reserved
-	ldr pc,_vector_irq
-	ldr pc,_vector_fiq
+#	b  _vector_reset
+#	ldr pc,_vector_undefined
+#	ldr pc,_vector_swi
+#	ldr pc,_vector_prefetch_abort
+#	ldr pc,_vector_data_abort
+#	ldr pc,_vector_reserved
+#	ldr pc,_vector_irq
+#	ldr pc,_vector_fiq
 
 # Exception vector table has been set by bootasm.S
 # We replace only the adresses of the handlers
@@ -70,32 +70,32 @@ __vector_table_end:
 
 # Reset - initialize stack for each cpu mode
 __vector_reset:
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|SVC_MOD)
-	ldr sp,=_SVC_STACK
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|IRQ_MOD)
-	ldr sp,=_IRQ_STACK
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|FIQ_MOD)
-	ldr sp,=_FIQ_STACK
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|ABT_MOD)
-	ldr sp,=_ABT_STACK
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|UND_MOD)
-	ldr sp,=_UND_STACK
-	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|SYS_MOD)
-	ldr sp,=_SYS_STACK
+#	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|SVC_MOD)
+#	ldr sp,=_SVC_STACK
+#	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|IRQ_MOD)
+#	ldr sp,=_IRQ_STACK
+#	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|FIQ_MOD)
+#	ldr sp,=_FIQ_STACK
+#	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|ABT_MOD)
+#	ldr sp,=_ABT_STACK
+#	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|UND_MOD)
+#	ldr sp,=_UND_STACK
+#	msr cpsr_c,#(DISABLE_IRQ|DISABLE_FIQ|SYS_MOD)
+#	ldr sp,=_SYS_STACK
 
 .globl irq_proc
 # Exception modes
 __vector_undefined:
-	b real_vector_und
+/*	b real_vector_und */
 __vector_swi:
-	b __switrap
+/*	b __switrap*/
 __vector_prefetch_abort:
-	b real_vector_pabt
+/*	b real_vector_pabt*/
 __vector_data_abort:
-	b real_vector_dabt
+/*	b real_vector_dabt*/
 __vector_reserved:
-	b __vector_reserved
+/*	b __vector_reserved*/
 __vector_irq:
-	b real_vector_irq
+/*	b real_vector_irq*/
 __vector_fiq:
-	b __vector_fiq
+/*	b __vector_fiq*/

@@ -21,7 +21,10 @@ endchoice
 
 choice
   prompt "Board"
-  default ARM_BOARD_GOLDFISH
+  default ARM_BOARD_M3
+
+config ARM_BOARD_M3
+  bool "MB9BF506R"
 
 config ARM_BOARD_GOLDFISH
   bool "Goldfish"
@@ -42,7 +45,7 @@ endchoice
 
 config HAVE_RAMDISK
   bool "Enable Ramdisk"
-  default y
+  default n
 
 config RAMDISK_FILE
   depends HAVE_RAMDISK

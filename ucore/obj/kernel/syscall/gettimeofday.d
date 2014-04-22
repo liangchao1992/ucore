@@ -1,14 +1,13 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/syscall/gettimeofday.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/syscall/gettimeofday.d: \
  gettimeofday.c \
  /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  linux_misc_struct.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/mm/vmm.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/list.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/memlayout.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/board.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/board-goldfish.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/memlayout.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/board.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/board-goldfish.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/memlayout_common.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/atomic.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/sync/sync.h \

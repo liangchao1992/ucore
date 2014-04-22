@@ -318,20 +318,7 @@ void print_stackframe(void)
 
 }
 
-void print_cur_status(void)
-{
-	static int round = 0;
-	uint32_t reg1, reg2, reg3, reg4;
-	asm volatile ("mov %0, sp;"
-		      "mov %1, fp;"
-		      "mrs %2, spsr;"
-		      "mrs %3, cpsr;":"=r" (reg1), "=r"(reg2), "=r"(reg3),
-		      "=r"(reg4));
-	kprintf("%d:  sp = %x\n", round, reg1);
-	kprintf("%d:  fp = %x\n", round, reg2);
-	kprintf("%d:  spsr = %x\n", round, reg3);
-	kprintf("%d:  cpsr = %x\n", round, reg4);
-	round++;
+void print_cur_status(void){
 }
 
 static bool __is_debugging = 0;

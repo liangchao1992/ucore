@@ -1,6 +1,5 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/file.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/file.d: \
  file.c /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/string.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/mm/slab.h \
@@ -27,9 +26,9 @@
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/process/proc.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/trap/trap.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/arch.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/memlayout.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/board.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mach-goldfish/board-goldfish.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/memlayout.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/board.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/m3/board-goldfish.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/memlayout_common.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/sync/event.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/numa/mp.h \

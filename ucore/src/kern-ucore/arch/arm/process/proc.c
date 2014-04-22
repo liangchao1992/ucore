@@ -139,7 +139,7 @@ int ucore_kernel_thread(int (*fn) (void *), void *arg, uint32_t clone_flags)
 {
 	struct trapframe tf_struct;
 	uint32_t sr = 0;
-	asm volatile ("mrs %0, cpsr":"=r" (sr));	// get spsr to be restored
+//	asm volatile ("mrs %0, cpsr":"=r" (sr));	// get spsr to be restored
 	memset(&tf_struct, 0, sizeof(struct trapframe));
 	tf_struct.tf_regs.reg_r[2] = (uint32_t) arg;
 	tf_struct.tf_regs.reg_r[1] = (uint32_t) fn;	// address to jump to (fn) is in r1, arg is in r2

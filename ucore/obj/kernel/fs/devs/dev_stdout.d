@@ -1,6 +1,5 @@
 /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/devs/dev_stdout.o /home/liangchao/MyWork/graduate/ucore/obj/kernel/fs/devs/dev_stdout.d: \
  dev_stdout.c /home/liangchao/MyWork/graduate/ucore/obj/config/autoconf.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/module/include/mach-goldfish/autoconf.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/types.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/stdio.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/stdarg.h \

@@ -188,8 +188,10 @@ static void page_init(void)
 	// kernel code zone | page structure table zone | free memory zone
 	// warning, stack IS in free memory zone!!!!
 	// TODO add ramdisk
-	uintptr_t freemem =
-	    PADDR((uintptr_t) pages + sizeof(struct Page) * npage);
+//	uintptr_t freemem =
+//	    PADDR((uintptr_t) pages + sizeof(struct Page) * npage);
+
+	uintptr_t freemem =   (uintptr_t) pages + sizeof(struct Page) * npage;
 	kprintf("freemem start at: 0x%08x\n", freemem);
 
 	// free memory block
@@ -207,8 +209,7 @@ static void page_init(void)
 				begin = ROUNDUP(begin, PGSIZE);
 				end = ROUNDDOWN(end, PGSIZE);
 				if (begin < end) {
-					init_memmap(pa2page(begin),
-						    (end - begin) / PGSIZE);
+					init_memmap(pa2page(begin), (end - begin) / PGSIZE);
 				}
 			}
 		}
@@ -296,7 +297,7 @@ void pmm_init(void)
 
 	check_pgdir();
 
-	static_assert(KERNBASE % PTSIZE == 0 && KERNTOP % PTSIZE == 0);
+//	static_assert(KERNBASE % PTSIZE == 0 && KERNTOP % PTSIZE == 0);
 
 	// recursively insert boot_pgdir in itself
 	// to form a virtual page table at virtual address VPT

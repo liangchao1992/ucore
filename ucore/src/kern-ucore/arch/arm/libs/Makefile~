@@ -1,0 +1,1 @@
+obj-y := div64.o eabi_utils.o mem.o 
