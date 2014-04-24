@@ -23,23 +23,32 @@
 #include <pdev_bus.h>
 #include <mb9b500r.h>
 static const char *message = "Initializing m3 Board...\n";
-
 static void put_string(const char *str)
 {
 	while (*str)
-		serial_putc(*str++);
+		uart_sendchar(*str++);
 }
 
 void board_init_early()
 {
-//	put_string(message);
+	crg_init();
+	wdg_init();
+	serial_init();
+	/*********************************************/
+	__disable_irq();
+	
+	/*Description   : Set exception entry stack frame align flag for 8 Bytes align.*/
+	SCB->CCR |= SCB_CCR_STKALIGN_Msk;
+	/* set PendSV and SysTick priority to 0xFF */
+	NVIC_SetPriority( PendSV_IRQn, 0xFF );
+    NVIC_SetPriority( SysTick_IRQn, 0xFF );
+	
 
-//	pic_init();		// init interrupt controller
-	//fixed base and irq
-//	clock_init_arm(0, 0);	// linux put tick_init in kernel_main, so do we~
-//	pdev_bus_init();
-/* use pdev bus to probe devices */
-	//serial_init();
+	NVIC_SetPriority(SVC_IRQn,0x0);
+	
+	SCB->VTOR = 0x00000000UL;
+	
+	
 	int a;
 	a=SysTick_Config(1<<20);
 	

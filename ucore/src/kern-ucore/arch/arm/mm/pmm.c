@@ -19,7 +19,7 @@
 #define KERNBASE            0x1FFF8000  //SDRAM0_START
 #define KMEMSIZE            0x10000     //64k SDRAM0_SIZE       // the maximum amount of physical memory
 #define KERNTOP             (KERNBASE + KMEMSIZE)
-
+#define PGSIZE          4096
 uint32_t do_set_tls(struct user_tls_desc *tlsp)
 {
 	void *tp = (void *)tlsp;
@@ -51,7 +51,7 @@ static Pagetable masterPT = { 0, 0, 0, MASTER, 0 };
 
 static struct memmap masterMemmap = { 1,
 	{
-	 {SDRAM0_START, SDRAM0_SIZE, MEMMAP_MEMORY}
+	 {KERNBASE, KMEMSIZE, MEMMAP_MEMORY}
 	 }
 };
 
@@ -113,8 +113,8 @@ struct Page *alloc_pages(size_t n)
 		page = pmm_manager->alloc_pages(n);
 	}
 	local_intr_restore(intr_flag);
-	if (page)
-		get_cpu_var(used_pages) += n;
+	//if (page)
+	//	get_cpu_var(used_pages) += n;
 	return page;
 }
 
@@ -127,7 +127,7 @@ void free_pages(struct Page *base, size_t n)
 		pmm_manager->free_pages(base, n);
 	}
 	local_intr_restore(intr_flag);
-	get_cpu_var(used_pages) -= n;
+	//get_cpu_var(used_pages) -= n;
 }
 
 //nr_free_pages - call pmm->nr_free_pages to get the size (nr*PAGESIZE) 
@@ -149,12 +149,13 @@ size_t nr_free_pages(void)
 /* pmm_init - initialize the physical memory management */
 static void page_init(void)
 {
-	//struct regionmap * memmap = (struct regionmap *) (0x10000 + KERNBASE); // where the memory map is
+//struct regionmap * memmap = (struct regionmap *) (0x10000 + KERNBASE); // where the memory map is
 	struct memmap *memmap = &masterMemmap;
 
 	// physical memory upper bound (see memmap)
 	uint32_t maxpa = 0;
-
+	assert(memmap->nr_map);
+	//kprintf("memmap->nr_map %d\n",memmap->nr_map);
 	// print memory map and compute maxpa
 	kprintf("memory map:\n");
 	int i;
@@ -176,26 +177,45 @@ static void page_init(void)
 	// end address of kernel
 	extern char end[];
 
-	// number of pages of the non-existing and existing physical memory (kernel + free)
-	npage = maxpa / PGSIZE;
+	/*// number of pages of the non-existing and existing physical memory (kernel + free)
+	npage = maxpa / PGSIZE;*/
+
+	/*Only take the existing physical memory.  WuZhenwei*/
+	npage = (memmap->map[0].size)/PGSIZE;
 	max_pfn = npage;
 
 	// put page structure table at the end of kernel
 	pages = (struct Page *)ROUNDUP((void *)end, PGSIZE);
-	//kprintf("maxpa: 0x%08x  npage: 0x%08x  pages: 0x%08x  end: 0x%08x\n", maxpa, npage, pages, end);
+	kprintf("maxpa: 0x%08x  npage: 0x%08x  pages: 0x%08x  end: 0x%08x\n", maxpa, npage, pages, end);
 
 	for (i = 0; i < npage; i++) {	// trick to not consider non existing pages
 		SetPageReserved(pages + i);
 	}
-
+	
 	// start address of free memory
 	// kernel code zone | page structure table zone | free memory zone
-	// warning, stack IS in free memory zone!!!!
+	// warning, stack IS in free memory zone!!!!  | don't warry, I have move stack to the bottom. But warning, satck with fixed size now.
 	// TODO add ramdisk
-//	uintptr_t freemem =
-//	    PADDR((uintptr_t) pages + sizeof(struct Page) * npage);
 
-	uintptr_t freemem =   (uintptr_t) pages + sizeof(struct Page) * npage;
+	/* ----------RAM END------------
+	 * freemem zone
+	 *
+	 *
+	 * page structure zone
+	 * start from pagesm which is PGSIZE aligned.
+ 	 * end at pages _ npage * sizeof(Struct Page)
+	 * 
+	 * .end
+	 * .bss
+	 * .data   
+	 * (.text remained in flash rom)
+	 * stack top 
+	 * 
+	 * --------RAM START------------
+ 	 */
+
+	//unitptr_t freemem = PADDR((uintptr_t) pages + sizeof(struct Page) * npage);  /* Disable Virtual2Physical conversion */
+	uintptr_t freemem =   (uintptr_t) pages + sizeof(struct Page) * npage; /* Access directly. */
 	kprintf("freemem start at: 0x%08x\n", freemem);
 
 	// free memory block
@@ -285,141 +305,11 @@ void pmm_init(void)
 	check_alloc_page();
 	kprintf("end check!!!");
 
-	// create boot_pgdir, an initial page directory(Page Directory Table, PDT)
-	boot_pgdir = boot_alloc_page();
-	// Align the PDT to the next 16kb boundary, ARM requirement
-	boot_pgdir = ROUNDUP(boot_pgdir, 4 * PGSIZE);
-
-	memset(boot_pgdir, 0, 4 * PGSIZE);
-	boot_pgdir_pa = PADDR(boot_pgdir);
-	kprintf("boot_pgdir at: 0x%08x \n", boot_pgdir);
-
-	// initialize master table / PDT
-	// TODO replace by simpler function
-	masterPT.ptAddress = masterPT.masterPtAddress = boot_pgdir_pa;
-	mmu_init_pdt(&masterPT);
-
-	check_pgdir();
-
-//	static_assert(KERNBASE % PTSIZE == 0 && KERNTOP % PTSIZE == 0);
-
-	// recursively insert boot_pgdir in itself
-	// to form a virtual page table at virtual address VPT
-	// The trick, however, is that we have to initialize up 
-	// to L2 tables, hence the use of get_pte to write 
-	// the PDT entries of where boot_pgdir is.
-	// PDT is 16kb, so we need to set 4 PTE
-	// objective: get_pte(boot_pgdir, VPT, 1) == boot_pgdir;
-	// Permission: Kernel writeable
-
-	map_pgdir(boot_pgdir);
-
-	// map fixed address segments
-	//boot_map_segment(boot_pgdir, virtual, PGSIZE, physical, PTEX_W); // base location of vector table
-	extern char __kernel_text_start[], __kernel_text_end[];
-	//kprintf("## %08x %08x\n", __kernel_text_start, __kernel_text_end);
-	boot_map_segment(boot_pgdir, KERNBASE, KMEMSIZE, PADDR(KERNBASE), PTE_W);	// fixed address
-	/* kernel code readonly protection */
-	boot_map_segment(boot_pgdir, (uintptr_t) __kernel_text_start,
-			 __kernel_text_end - __kernel_text_start,
-			 (uintptr_t) PADDR(__kernel_text_start), PTE_P);
-
-	boot_map_segment(boot_pgdir, KIOBASE, KIOSIZE, KIOBASE, PTE_W | PTE_IOMEM);	// fixed address
-
-	//Add PTE_W|PTE_U by whn09
-	//PTE_W should be aborted later
-	boot_map_segment(boot_pgdir, 0xFFFF0000, PGSIZE, SDRAM0_START, PTE_PWT | PTE_W | PTE_U);	// high location of vector table
-
-#ifdef UCONFIG_HAVE_RAMDISK
-	if (CHECK_INITRD_EXIST()) {
-		boot_map_segment(boot_pgdir, DISK_FS_VBASE,
-				 ROUNDUP(initrd_end - initrd_begin, PGSIZE),
-				 (uintptr_t) PADDR(initrd_begin), PTE_W);
-		kprintf("mapping initrd to 0x%08x\n", DISK_FS_VBASE);
-	}
-#endif
-#ifdef HAS_NANDFLASH
-	if (check_nandflash()) {
-		boot_map_segment(boot_pgdir, NAND_FS_VBASE, 0x10000000,
-				 AT91C_SMARTMEDIA_BASE, PTE_W | PTE_IOMEM);
-		kprintf("mapping nandflash to 0x%08x\n", NAND_FS_VBASE);
-	}
-#endif
-#ifdef HAS_SDS
-	if (check_sds()) {
-		boot_map_segment(boot_pgdir, SDS_VBASE, SDS_VSIZE,
-				 AT91C_BASE_EBI2, PTE_W | PTE_IOMEM);
-		kprintf("mapping sds to 0x%08x\n", SDS_VBASE);
-	}
-#endif
-#ifdef HAS_SHARED_KERNMEM
-	struct Page *kshm_page = alloc_pages(SHARED_KERNMEM_PAGES);
-	void *kern_shm_pbase = page2kva(kshm_page);
-	assert(kern_shm_pbase);
-	boot_map_segment(boot_pgdir, SHARED_KERNMEM_VBASE,
-			 SHARED_KERNMEM_PAGES * PGSIZE,
-			 (uintptr_t) PADDR(kern_shm_pbase), PTE_W | PTE_U);
-	kprintf("mapping kern_shm 0x%08x to 0x%08x, size: %d Pages\n",
-		kern_shm_pbase, SHARED_KERNMEM_VBASE, SHARED_KERNMEM_PAGES);
-	*(uint32_t *) kern_shm_pbase = 0;
-
-	*(uint32_t *) kern_shm_pbase = 0x48594853;
-	*(uint32_t *) (kern_shm_pbase + 4) = 0x04;
-	*(uint32_t *) (kern_shm_pbase + 12) = 0x00555555;
-	*(uint32_t *) (kern_shm_pbase + 512) = 0x43444546;
-#endif
-	// ramdisk for swap
-	//boot_map_segment(boot_pgdir, RAMDISK_START, 0x10000000, 0x10000000, PTE_W); // fixed address
-	// high kernel WIP
-	//boot_map_segment(boot_pgdir, 0xC0000000, KMEMSIZE, KERNBASE, PTE_W); // relocation address
-	print_pgdir(kprintf);
-
-	/* Part 3 activating page tables */
-	ttbSet((uint32_t) PADDR(boot_pgdir));
-
-	/* enable cache and MMU */
-	mmu_init();
-
-	/* ioremap */
-	board_init();
-
-	kprintf("mmu enabled.\n");
-	print_pgdir(kprintf);
-
-	//now the basic virtual memory map(see memalyout.h) is established.
-	//check the correctness of the basic virtual memory map.
-	//XXX This is a buggy test!
-	//check_boot_pgdir();
-
-	//print_pgdir(kprintf);
-
-	/* boot_pgdir now should be VDT */
-	boot_pgdir = (pde_t *) VPT_BASE;
-
 	slab_init();
 
 	kprintf("slab_init() done\n");
 
-	/*
-	 * Add by whn09, map 0xffff0fa0!
-	 */
-	unsigned long vectors = 0xffff0000;	//CONFIG_VECTORS_BASE = 0xffff0000
-	extern char __kuser_helper_start[], __kuser_helper_end[];
-	//kprintf("## whn09 start %08x %08x\n", __kuser_helper_start, __kuser_helper_end);
-	int kuser_sz = __kuser_helper_end - __kuser_helper_start;
-	memcpy((void *)vectors + 0x1000 - kuser_sz, __kuser_helper_start,
-	       kuser_sz);
-	//kprintf("## whn09 end %08x %08x\n", __kuser_helper_start, __kuser_helper_end);
-	pte_t *ptep = get_pte(boot_pgdir, 0XFFFF0000, 1);
-	assert(ptep != NULL);
-	//Fix me
-	//the page 0xffff0000's permission should be 'PTE_P | ~PTE_W | PTE_PWT | PTE_U',
-	//but the code didn't work even though the permission of that page is set as mentioned above.
-	ptep_set_perm(ptep, PTE_P | ~PTE_W | PTE_PWT | PTE_U);
-	//memcpy((void*)vectors + 0x1000 - kuser_sz, __kuser_helper_start, kuser_sz);
-	/*
-	 * Add end
-	 */
+
 }
 
 // invalidate both TLB 
@@ -517,10 +407,8 @@ void map_pgdir(pde_t * pgdir)
 
 static void check_alloc_page(void)
 {
-#ifndef BYPASS_CHECK
 	pmm_manager->check();
 	kprintf("check_alloc_page() succeeded!\n");
-#endif /* !__BYPASS_CHECK__ */
 }
 
 static void check_pgdir(void)
@@ -696,59 +584,6 @@ get_pgtable_items(size_t left, size_t right, size_t start, uintptr_t * table,
 //print_pgdir - print the PDT&PT
 void print_pgdir(int (*printf) (const char *fmt, ...))
 {
-	printf("-------------------- BEGIN --------------------\n");
-	size_t left, right = 0, perm;
-	while ((perm =
-		get_pgtable_items(0, NPDEENTRY, right, boot_pgdir, &left,
-				  &right, 0x3FF)) != 0) {
-		printf("PDE(%03x) %08x-%08x %08x %s\n", right - left,
-		       left * PTSIZE, right * PTSIZE, (right - left) * PTSIZE,
-		       perm2str(perm));
-
-		bool ref_valid = 0;
-		size_t ref_l, ref_r, ref_perm;
-
-		size_t curr_pt_id;
-		for (curr_pt_id = left; curr_pt_id < right; curr_pt_id++) {
-			pte_t *curr_pt =
-			    (pte_t *) PDE_ADDR(boot_pgdir[curr_pt_id]);
-			size_t range_perm;
-			size_t l, r = 0;
-			while ((range_perm =
-				get_pgtable_items(0, NPTEENTRY, r, KADDR((uintptr_t)curr_pt), &l,
-						  &r, PTEX_UW)) != 0) {
-				size_t range_l =
-				    curr_pt_id * PTSIZE + l * PGSIZE;
-				size_t range_r =
-				    curr_pt_id * PTSIZE + r * PGSIZE;
-				if (!ref_valid) {
-					ref_valid = 1;
-					ref_l = range_l;
-					ref_r = range_r;
-					ref_perm = range_perm;
-				} else if (range_l == ref_r
-					   && range_perm == ref_perm) {
-					ref_r = range_r;
-				} else {
-					int ref_dist = ref_r - ref_l;
-					printf
-					    ("  |-- PTE(%05x) %08x-%08x %08x %s\n",
-					     ref_dist / PGSIZE, ref_l, ref_r,
-					     ref_dist, perm2str(ref_perm));
-					ref_l = range_l;
-					ref_r = range_r;
-					ref_perm = range_perm;
-				}
-			}
-		}
-		if (ref_valid) {
-			int ref_dist = ref_r - ref_l;
-			printf("  |-- PTE(%05x) %08x-%08x %08x %s\n",
-			       ref_dist / PGSIZE, ref_l, ref_r, ref_dist,
-			       perm2str(ref_perm));
-		}
-	}
-	printf("--------------------- END ---------------------\n");
 }
 
 static uint32_t __current_ioremap_base = UCORE_IOREMAP_BASE;

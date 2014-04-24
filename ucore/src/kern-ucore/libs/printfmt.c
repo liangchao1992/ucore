@@ -73,7 +73,7 @@ printnum(void (*putch) (int, void *, int), int fd, void *putdat,
 	 unsigned long long num, unsigned base, int width, int padc)
 {
 	unsigned long long result = num;
-	unsigned mod = do_div(result, base);
+	unsigned mod = do_div(&result, base);
 
 	// first recursively print all preceding (more significant) digits
 	if (num >= base) {

@@ -1,0 +1,4 @@
+void uart_sendchar(uint8_t c);
+void crg_init(void);
+void wdg_init(void);
+void serial_init();

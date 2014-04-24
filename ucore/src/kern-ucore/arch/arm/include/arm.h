@@ -62,17 +62,21 @@ static inline uint32_t read_fp(void)
 /* equivalent of sti assembly instruction */
 static inline void irq_flag_enable(void)
 {
-	asm volatile ("mrs r0, cpsr;"
+/*	asm volatile ("mrs r0, cpsr;"
 		      "bic r0, r0, #0x80;"
 		      "msr cpsr, r0;":::"r0", "memory", "cc");
+	 */
+	asm volatile("cpsie i" : : : "memory");//for armv7m
 }
 
 /* equivalent of cti assembly instruction */
 static inline void irq_flag_disable(void)
 {
-	asm volatile ("mrs r0, cpsr;"
+/*	asm volatile ("mrs r0, cpsr;"
 		      "orr r0, r0, #0x80;"
 		      "msr cpsr, r0;":::"r0", "memory", "cc");
+	 */
+	asm volatile ("cpsid i" : : : "memory");//for armv7-m
 }
 
 static inline uint32_t read_psrflags(void)

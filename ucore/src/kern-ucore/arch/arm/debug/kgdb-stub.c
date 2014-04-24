@@ -19,14 +19,14 @@
 #include <board.h>
 #include <memlayout.h>
 #include <types.h>
-#include <arm.h>
+//#include <arm.h>
 #include <stdio.h>
 #include <trap.h>
 #include <kio.h>
 #include <kdebug.h>
 #include <string.h>
-#include <assert.h>
-#include <kgdb-stub.h>
+//#include <assert.h>
+//#include <kgdb-stub.h>
 
 #define MAX_KGDB_BP      16
 

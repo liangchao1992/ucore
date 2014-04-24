@@ -298,8 +298,11 @@ static void buddy_check(void)
 	}
 
 	free_pages(p0, 8);
-	free_pages(buddy, 8);
-
+	if(buddy!=NULL){
+		free_pages(buddy, 8);
+	}else{
+		kprintf("No buddy at all. It is reasonable to bypass the free. Or it will crack down.\n");
+	}
 	assert(total == nr_free_pages());
 
 	for (i = 0; i <= MAX_ORDER; i++) {
@@ -312,6 +315,7 @@ static void buddy_check(void)
 	}
 	assert(count == 0);
 	assert(total == 0);
+	kprintf("nrfreepages:%d",nr_free_pages());
 }
 
 //the buddy system pmm

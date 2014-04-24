@@ -17,7 +17,7 @@ struct pmm_manager {
 	void (*init_memmap) (struct Page * base, size_t n);	// setup description&management data structcure according to
 	struct Page *(*alloc_pages) (size_t n);
 	void (*free_pages) (struct Page * base, size_t n);
-	 size_t(*nr_free_pages) (void);
+	size_t(*nr_free_pages) (void);
 	void (*check) (void);
 };
 
@@ -42,7 +42,7 @@ void page_remove(pde_t * pgdir, uintptr_t la);
 
 #ifdef UCONFIG_BIONIC_LIBC
 void page_insert_pte(pde_t * pgdir, struct Page *page, pte_t * ptep,
-		     uintptr_t la, uint32_t perm);
+					 uintptr_t la, uint32_t perm);
 #endif //UCONFIG_BIONIC_LIBC
 int page_insert(pde_t * pgdir, struct Page *page, uintptr_t la, uint32_t perm);
 
@@ -70,12 +70,12 @@ void print_pgdir(int (*printf) (const char *fmt, ...));
  * */
 //TODO KERNBASE?
 #define PADDR(kva) ({                                                   \
-            uintptr_t __m_kva = (uintptr_t)(kva);                       \
-            if (__m_kva < KERNBASE) {                                   \
-                panic("PADDR called with invalid kva 0x%08lx", __m_kva);\
-            }                                                           \
-            __m_kva - KERNBASE;                                         \
-        })
+uintptr_t __m_kva = (uintptr_t)(kva);                       \
+	if (__m_kva < KERNBASE) {                                   \
+	panic("PADDR called with invalid kva 0x%08lx", __m_kva);\
+}                                                           \
+__m_kva - KERNBASE;                                         \
+})
 
 /* *
  * KADDR - takes a physical address and returns the corresponding kernel virtual
@@ -83,47 +83,62 @@ void print_pgdir(int (*printf) (const char *fmt, ...));
  * Current implementation puts kernel in fixed address
  * */
 #define KADDR(pa) ({                                                    \
-            uintptr_t __m_pa = (pa);                                    \
-            size_t __m_ppn = PPN(__m_pa);                               \
-            if (__m_ppn >= npage) {                                     \
-                panic("KADDR called with invalid pa 0x%08lx", __m_pa);  \
-            }                                                           \
-            (void *) (__m_pa + KERNBASE);                                          \
-        })
+uintptr_t __m_pa = (pa);                                    \
+				   size_t __m_ppn = PPN(__m_pa);                               \
+if (__m_ppn >= npage) {                                     \
+panic("KADDR called with invalid pa 0x%08lx", __m_pa);  \
+}                                                           \
+(void *) (__m_pa + KERNBASE);                                          \
+})
 
 #define NEXT_PAGE(pg) (pg + 1)
 
 extern struct Page *pages;
-extern size_t npage;
+		extern size_t npage;
 
 // physical address of page to page number
 static inline ppn_t page2ppn(struct Page *page)
 {
 	return page - pages;
 }
-
+/* wuzhenwei 
+ * April 12, 2014
+ */
+#define RAM_OFFSET 0x1fff8000
 // physical address of page to pointing address of page
 static inline uintptr_t page2pa(struct Page *page)
 {
-	return page2ppn(page) << PGSHIFT;
+	return ((page2ppn(page)<< PGSHIFT) + RAM_OFFSET);
 }
-
+/*
+ *  npage = KMEMSIZE/PGSIZE
+ *  pages = 
+ *
+ *
+ */
 static inline struct Page *pa2page(uintptr_t pa)
 {
-	if (PPN(pa) >= npage) {
-		panic("pa2page called with invalid 0x%08lx", pa);
+	uint32_t ppn = (pa-RAM_OFFSET)>>PGSHIFT;
+	if(ppn>=npage || ppn<0)
+	{
+		panic("Physical Address 0x%08x is invalid.",pa);
 	}
-	return &pages[PPN(pa)];
+	return &pages[ppn];/*page2ppn(&pages[ppn])==ppn*/
 }
 
+/*
+ * We are in a mmuless situation, so no virtual address support, consequently, no address translation needed at all. That's it !
+ */
 static inline void *page2kva(struct Page *page)
 {
-	return KADDR(page2pa(page));
+	/*nommu*/
+	return page2pa(page);
 }
 
 static inline struct Page *kva2page(void *kva)
 {
-	return pa2page(PADDR(kva));
+	/*nommu*/
+	return pa2page((uintptr_t)kva);
 }
 
 static inline struct Page *pte2page(pte_t pte)

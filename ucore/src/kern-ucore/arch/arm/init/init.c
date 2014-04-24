@@ -105,11 +105,11 @@ static void check_bp()
 
 int kern_init(void)
 {
-	extern char edata[], end[];
-	memset(edata, 0, end - edata);
+//	extern char edata[], end[];
+//	memset(edata, 0, end - edata);
 
 
-	exception_vector_init();
+//	exception_vector_init();
 	board_init_early();
 
 #ifdef UCONFIG_HAVE_RAMDISK

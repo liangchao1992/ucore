@@ -1,4 +1,4 @@
-target remote 192.168.0.62:2331
+target remote 192.168.0.189:2331
 file obj/kernel/kernel-arm.elf
 monitor endian littele
 monitor reset

@@ -1,7 +1,6 @@
 #ifndef __KERN_SYNC_SYNC_H__
 #define __KERN_SYNC_SYNC_H__
-
-#include <arm.h>
+#include <types.h>
 #include <intr.h>
 
 static inline bool __intr_save(void)

@@ -1,6 +1,6 @@
 /*
  * Automatically generated C config: don't edit
- * Tue Apr 22 18:08:12 2014
+ * Thu Apr 24 10:47:50 2014
  */
 #define UCONFIG_NR_NUMA_NODES 1
 #define UCONFIG_DRAM_START 0x0

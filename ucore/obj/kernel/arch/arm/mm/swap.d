@@ -8,9 +8,6 @@
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/memlayout_common.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/atomic.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/sync/sync.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/arm.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/div64.h \
- /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/string.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/driver/intr.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/list.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/mm/mmu.h \
@@ -18,6 +15,9 @@
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/process/proc.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/trap/trap.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/arch.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/arm.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/arch/arm/include/div64.h \
+ /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/string.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/libs/unistd.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/sync/sem.h \
  /home/liangchao/MyWork/graduate/ucore/src/kern-ucore/sync/wait.h \

@@ -18,25 +18,25 @@ typedef ucore_atomic_t atomic_t;
 #endif
 
 static inline int atomic_read(const atomic_t * v)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline void atomic_set(atomic_t * v, int i)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline void atomic_add(atomic_t * v, int i)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline void atomic_sub(atomic_t * v, int i)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline bool atomic_sub_test_zero(atomic_t * v, int i)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline void atomic_inc(atomic_t * v) __attribute__ ((always_inline));
 static inline void atomic_dec(atomic_t * v) __attribute__ ((always_inline));
 static inline bool atomic_inc_test_zero(atomic_t * v)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline bool atomic_dec_test_zero(atomic_t * v)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline int atomic_add_return(atomic_t * v, int i)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline int atomic_sub_return(atomic_t * v, int i)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 
 /* *
  * atomic_read - read atomic variable
@@ -200,19 +200,19 @@ static inline int atomic_sub_return(atomic_t * v, int i)
 }
 
 static inline void set_bit(int nr, volatile uint32_t * addr)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline void clear_bit(int nr, volatile uint32_t * addr)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline void change_bit(int nr, volatile uint32_t * addr)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline bool test_and_set_bit(int nr, volatile uint32_t * addr)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline bool test_and_clear_bit(int nr, volatile uint32_t * addr)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline bool test_and_change_bit(int nr, volatile uint32_t * addr)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 static inline bool test_bit(int nr, volatile uint32_t * addr)
-    __attribute__ ((always_inline));
+__attribute__ ((always_inline));
 
 /* *
  * set_bit - Atomically set a bit in memory
@@ -290,7 +290,9 @@ static inline bool test_and_clear_bit(int nr, volatile uint32_t * addr)
 		c = 1;
 	*addr &= ~(1 << nr);
 	local_intr_restore(intr_flag);
-	return 0;
+	//return 0;
+	/*find this from the compiler report: c is defined and assigned a value but never used.*/
+	return c;
 }
 
 /* *
@@ -309,7 +311,9 @@ static inline bool test_and_change_bit(int nr, volatile uint32_t * addr)
 //#error Fill HERE
 	*(volatile long *)addr ^= (1 << nr);
 	local_intr_restore(intr_flag);
-	return 0;
+
+	return c;  // return its old value
+	//return 0;
 }
 
 /* *
